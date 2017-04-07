@@ -6,7 +6,6 @@ Based on Communication Protocol V1.0.4 (_latest version [here](http://dobot.cc/d
 
 Samples
 ---
-OSX
 
 ```python
 from dobot import DobotMagician

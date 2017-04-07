@@ -2,12 +2,25 @@ import struct
 import threading
 import time
 
-import message
 import serial
-from message import Message
+from pydobot.message import Message
+
+ID_GET_POSE = 10
+ID_SET_CP_CMD = 91
+
+MODE_PTP_JUMP_XYZ = 0x00
+MODE_PTP_MOVJ_XYZ = 0x01
+MODE_PTP_MOVL_XYZ = 0x02
+MODE_PTP_JUMP_ANGLE = 0x03
+MODE_PTP_MOVJ_ANGLE = 0x04
+MODE_PTP_MOVL_ANGLE = 0x05
+MODE_PTP_MOVJ_INC = 0x06
+MODE_PTP_MOVL_INC = 0x07
+MODE_PTP_MOVJ_XYZ_INC = 0x08
+MODE_PTP_JUMP_MOVL_XYZ = 0x09
 
 
-class DobotMagician(threading.Thread):
+class Dobot(threading.Thread):
     on = True
     x = 0.0
     y = 0.0
@@ -71,10 +84,10 @@ class DobotMagician(threading.Thread):
 
     def _get_pose(self, verbose=True):
         msg = Message()
-        msg.id = message.ID_GET_POSE
+        msg.id = ID_GET_POSE
         response = self._send_command(msg, verbose)
         if response is not None:
-            if response.id == message.ID_GET_POSE:
+            if response.id == ID_GET_POSE:
                 self.x = struct.unpack_from('f', response.params, 0)[0]
                 self.y = struct.unpack_from('f', response.params, 4)[0]
                 self.z = struct.unpack_from('f', response.params, 8)[0]
@@ -89,7 +102,7 @@ class DobotMagician(threading.Thread):
 
     def _set_cp_cmd(self, x, y, z, verbose=True):
         msg = Message()
-        msg.id = message.ID_SET_CP_CMD
+        msg.id = ID_SET_CP_CMD
         msg.ctrl = 0x03
         msg.params = bytearray(bytes([0x01]))
         msg.params.extend(bytearray(struct.pack('f', x)))
@@ -143,7 +156,7 @@ class DobotMagician(threading.Thread):
         return self._send_command(msg, verbose)
 
     def go(self, x, y, z, r=0.):
-        self._set_ptp_cmd(x, y, z, r, mode=message.MODE_PTP_MOVJ_XYZ)
+        self._set_ptp_cmd(x, y, z, r, mode=MODE_PTP_MOVJ_XYZ)
 
     def suck(self, suck):
         self._set_end_effector_suction_cup(suck)
