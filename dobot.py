@@ -30,23 +30,13 @@ class DobotMagician(threading.Thread):
                                  bytesize=serial.EIGHTBITS)
         is_open = self.ser.isOpen()
         print('%s open' % self.ser.name if is_open else 'failed to open serial port')
+        self._set_ptp_coordinate_params(velocity=200.0, acceleration=200.0)
+        self._set_ptp_common_params(velocity=200.0, acceleration=200.0)
         self.start()
 
     def run(self):
         while self.on:
-            msg = self._get_pose()
-            if msg is not None:
-                if msg.id == message.ID_GET_POSE:
-                    self.x = struct.unpack_from('f', msg.params, 0)
-                    self.y = struct.unpack_from('f', msg.params, 4)
-                    self.z = struct.unpack_from('f', msg.params, 8)
-                    self.r = struct.unpack_from('f', msg.params, 12)
-                    self.j1 = struct.unpack_from('f', msg.params, 16)
-                    self.j2 = struct.unpack_from('f', msg.params, 20)
-                    self.j3 = struct.unpack_from('f', msg.params, 24)
-                    self.j4 = struct.unpack_from('f', msg.params, 28)
-                    pass
-                pass
+            self._get_pose(verbose=False)
             time.sleep(0.2)
 
     def close(self):
@@ -56,33 +46,48 @@ class DobotMagician(threading.Thread):
         print('%s closed' % self.ser.name)
         self.lock.release()
 
-    def _send_command(self, msg):
+    def _send_command(self, msg, verbose=True):
         self.lock.acquire()
-        self._send_message(msg)
-        response = self._read_message()
+        self._send_message(msg, verbose)
+        response = self._read_message(verbose)
         self.lock.release()
         return response
 
-    def _send_message(self, msg):
+    def _send_message(self, msg, verbose=True):
         time.sleep(0.1)
-        print('>>', msg)
+        if verbose:
+            print('>>', msg)
         self.ser.write(msg.bytes())
 
-    def _read_message(self):
+    def _read_message(self, verbose=True):
         time.sleep(0.1)
         b = self.ser.read_all()
         if len(b) > 0:
             msg = Message(b)
-            print('<<', msg)
+            if verbose:
+                print('<<', msg)
             return msg
         return
 
-    def _get_pose(self):
+    def _get_pose(self, verbose=True):
         msg = Message()
         msg.id = message.ID_GET_POSE
-        return self._send_command(msg)
+        response = self._send_command(msg, verbose)
+        if response is not None:
+            if response.id == message.ID_GET_POSE:
+                self.x = struct.unpack_from('f', response.params, 0)[0]
+                self.y = struct.unpack_from('f', response.params, 4)[0]
+                self.z = struct.unpack_from('f', response.params, 8)[0]
+                self.r = struct.unpack_from('f', response.params, 12)[0]
+                self.j1 = struct.unpack_from('f', response.params, 16)[0]
+                self.j2 = struct.unpack_from('f', response.params, 20)[0]
+                self.j3 = struct.unpack_from('f', response.params, 24)[0]
+                self.j4 = struct.unpack_from('f', response.params, 28)[0]
+        # print("x:%3.1f y:%3.1f z:%3.1f r:%3.1f j1:%3.1f j2:%3.1f j3:%3.1f j4:%3.1f" % (
+        #     self.x, self.y, self.z, self.r, self.j1, self.j2, self.j3, self.j4))
+        return response
 
-    def _set_cp_cmd(self, x, y, z):
+    def _set_cp_cmd(self, x, y, z, verbose=True):
         msg = Message()
         msg.id = message.ID_SET_CP_CMD
         msg.ctrl = 0x03
@@ -91,7 +96,58 @@ class DobotMagician(threading.Thread):
         msg.params.extend(bytearray(struct.pack('f', y)))
         msg.params.extend(bytearray(struct.pack('f', z)))
         msg.params.append(0x00)
-        return self._send_command(msg)
+        return self._send_command(msg, verbose)
 
-    def move(self, x, y, z):
-        self._set_cp_cmd(x, y, z)
+    def _set_ptp_coordinate_params(self, velocity, acceleration, verbose=True):
+        msg = Message()
+        msg.id = 81
+        msg.ctrl = 0x03
+        msg.params = bytearray([])
+        msg.params.extend(bytearray(struct.pack('f', velocity)))
+        msg.params.extend(bytearray(struct.pack('f', velocity)))
+        msg.params.extend(bytearray(struct.pack('f', acceleration)))
+        msg.params.extend(bytearray(struct.pack('f', acceleration)))
+        return self._send_command(msg, verbose)
+
+    def _set_ptp_common_params(self, velocity, acceleration, verbose=True):
+        msg = Message()
+        msg.id = 83
+        msg.ctrl = 0x03
+        msg.params = bytearray([])
+        msg.params.extend(bytearray(struct.pack('f', velocity)))
+        msg.params.extend(bytearray(struct.pack('f', acceleration)))
+        return self._send_command(msg, verbose)
+
+    def _set_ptp_cmd(self, x, y, z, r, mode, verbose=True):
+        msg = Message()
+        msg.id = 84
+        msg.ctrl = 0x03
+        msg.params = bytearray([])
+        msg.params.extend(bytearray([mode]))
+        msg.params.extend(bytearray(struct.pack('f', x)))
+        msg.params.extend(bytearray(struct.pack('f', y)))
+        msg.params.extend(bytearray(struct.pack('f', z)))
+        msg.params.extend(bytearray(struct.pack('f', r)))
+        return self._send_command(msg, verbose)
+
+    def _set_end_effector_suction_cup(self, suck=False, verbose=True):
+        msg = Message()
+        msg.id = 62
+        msg.ctrl = 0x03
+        msg.params = bytearray([])
+        msg.params.extend(bytearray([0x01]))
+        if suck is True:
+            msg.params.extend(bytearray([0x01]))
+        else:
+            msg.params.extend(bytearray([0x00]))
+        return self._send_command(msg, verbose)
+
+    def go(self, x, y, z, r=0.):
+        self._set_ptp_cmd(x, y, z, r, mode=message.MODE_PTP_MOVJ_XYZ)
+
+    def suck(self, suck):
+        self._set_end_effector_suction_cup(suck)
+
+    def speed(self, velocity=100., acceleration=100.):
+        self._set_ptp_common_params(velocity, acceleration)
+        self._set_ptp_coordinate_params(velocity, acceleration)

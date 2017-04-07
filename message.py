@@ -1,6 +1,17 @@
 ID_GET_POSE = 10
 ID_SET_CP_CMD = 91
 
+MODE_PTP_JUMP_XYZ = 0x00
+MODE_PTP_MOVJ_XYZ = 0x01
+MODE_PTP_MOVL_XYZ = 0x02
+MODE_PTP_JUMP_ANGLE = 0x03
+MODE_PTP_MOVJ_ANGLE = 0x04
+MODE_PTP_MOVL_ANGLE = 0x05
+MODE_PTP_MOVJ_INC = 0x06
+MODE_PTP_MOVL_INC = 0x07
+MODE_PTP_MOVJ_XYZ_INC = 0x08
+MODE_PTP_JUMP_MOVL_XYZ = 0x09
+
 
 class Message:
     def __init__(self, b=None):
@@ -33,6 +44,7 @@ class Message:
                 self.checksum += self.params[i]
             self.checksum = self.checksum % 256
             self.checksum = 2 ** 8 - self.checksum
+            self.checksum = self.checksum % 256
             self.len = 0x02 + len(self.params)
 
     def bytes(self):
