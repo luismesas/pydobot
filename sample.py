@@ -1,13 +1,3 @@
-Python 3 library for Dobot Magician
-===
-
-Based on Communication Protocol V1.0.4 (_latest version [here](http://dobot.cc/download-center/dobot-magician.html)_)
-
-
-Samples
----
-
-```python
 from pydobot import Dobot
 from glob import glob
 
@@ -23,10 +13,8 @@ device.start()
 
 time.sleep(0.5)
 device.speed(100)
-device.go(250.0, 0.0, -25.0)
-device.speed(10)
 device.go(250.0, 0.0, 25.0)
+device.speed(10)
+device.go(250.0, 0.0, 0.0)
 time.sleep(2)
 device.close()
-
-```
