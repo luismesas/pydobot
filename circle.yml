@@ -5,4 +5,4 @@ deployment:
   production:
     branch: master
     commands:
-      - python setup.py sdist upload -r pypi
+      - python setup.py sdist upload -r https://pypi.python.org/pypi
