@@ -1,6 +1,9 @@
 machine:
   python:
     version: 2.7.13
+test:
+  override:
+    - "true"
 deployment:
   production:
     branch: master
