@@ -5,9 +5,6 @@ import time
 import serial
 from pydobot.message import Message
 
-ID_GET_POSE = 10
-ID_SET_CP_CMD = 91
-
 MODE_PTP_JUMP_XYZ = 0x00
 MODE_PTP_MOVJ_XYZ = 0x01
 MODE_PTP_MOVL_XYZ = 0x02
@@ -87,18 +84,16 @@ class Dobot(threading.Thread):
 
     def _get_pose(self):
         msg = Message()
-        msg.id = ID_GET_POSE
+        msg.id = 10
         response = self._send_command(msg)
-        if response is not None:
-            if response.id == ID_GET_POSE:
-                self.x = struct.unpack_from('f', response.params, 0)[0]
-                self.y = struct.unpack_from('f', response.params, 4)[0]
-                self.z = struct.unpack_from('f', response.params, 8)[0]
-                self.r = struct.unpack_from('f', response.params, 12)[0]
-                self.j1 = struct.unpack_from('f', response.params, 16)[0]
-                self.j2 = struct.unpack_from('f', response.params, 20)[0]
-                self.j3 = struct.unpack_from('f', response.params, 24)[0]
-                self.j4 = struct.unpack_from('f', response.params, 28)[0]
+        self.x = struct.unpack_from('f', response.params, 0)[0]
+        self.y = struct.unpack_from('f', response.params, 4)[0]
+        self.z = struct.unpack_from('f', response.params, 8)[0]
+        self.r = struct.unpack_from('f', response.params, 12)[0]
+        self.j1 = struct.unpack_from('f', response.params, 16)[0]
+        self.j2 = struct.unpack_from('f', response.params, 20)[0]
+        self.j3 = struct.unpack_from('f', response.params, 24)[0]
+        self.j4 = struct.unpack_from('f', response.params, 28)[0]
         if self.verbose:
             print("pydobot: x:%03.1f y:%03.1f z:%03.1f r:%03.1f j1:%03.1f j2:%03.1f j3:%03.1f j4:%03.1f" %
                   (self.x, self.y, self.z, self.r, self.j1, self.j2, self.j3, self.j4))
@@ -106,7 +101,7 @@ class Dobot(threading.Thread):
 
     def _set_cp_cmd(self, x, y, z):
         msg = Message()
-        msg.id = ID_SET_CP_CMD
+        msg.id = 91
         msg.ctrl = 0x03
         msg.params = bytearray(bytes([0x01]))
         msg.params.extend(bytearray(struct.pack('f', x)))
