@@ -9,7 +9,7 @@ deployment:
     branch: master
     commands:
       - pip install twine
-      - envsubst < "setup.py" > "setup.py"
+      - envsubst < setup.py > setup.py
       - cat setup.py
       - python setup.py sdist
       - twine upload -u "${PIP_USERNAME}" -p "${PIP_PASSWORD}" dist/*
