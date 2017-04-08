@@ -5,4 +5,6 @@ deployment:
   production:
     branch: master
     commands:
-      - python setup.py sdist upload -r https://pypi.python.org/pypi
+      - pip install twine
+      - python setup.py sdist
+      - twine upload -u "${PIP_USERNAME}" -p "${PIP_PASSWORD}" dist/*.gz
