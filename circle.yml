@@ -10,6 +10,5 @@ deployment:
     commands:
       - pip install twine
       - envsubst < setup.py.template > setup.py
-      - cat setup.py
       - python setup.py sdist
       - twine upload -u "${PIP_USERNAME}" -p "${PIP_PASSWORD}" dist/*
