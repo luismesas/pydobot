@@ -1,6 +1,6 @@
 [![CircleCI](https://circleci.com/gh/luismesas/pydobot.svg?style=svg)](https://circleci.com/gh/luismesas/pydobot)
 
-Python 3 library for Dobot Magician
+Python library for Dobot Magician
 ===
 
 Based on Communication Protocol V1.0.4 (_latest version [here](http://dobot.cc/download-center/dobot-magician.html)_)
