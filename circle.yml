@@ -1,0 +1,8 @@
+machine:
+  python:
+    version: 3.6
+deployment:
+  production:
+    branch: master
+    commands:
+      - python setup.py sdist upload -r pypi
