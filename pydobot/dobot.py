@@ -3,6 +3,7 @@ import threading
 import time
 
 import serial
+
 from pydobot.message import Message
 
 MODE_PTP_JUMP_XYZ = 0x00

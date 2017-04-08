@@ -14,5 +14,7 @@ setup(
     download_url='https://github.com/luismesas/pydobot/archive/0.2.%s.tar.gz' % build_num,
     keywords=['dobot', 'magician', 'robotics'],
     classifiers=[],
-    install_requires=['pyserial']
+    install_requires=[
+        'pyserial'
+    ]
 )
