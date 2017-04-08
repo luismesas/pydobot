@@ -10,10 +10,10 @@ Samples
 ---
 
 ```python
-from pydobot import Dobot
+import time
 from glob import glob
 
-import time
+from pydobot import Dobot
 
 available_ports = glob('/dev/cu*usb*')  # mask for OSX Dobot port
 if len(available_ports) == 0:
@@ -21,13 +21,12 @@ if len(available_ports) == 0:
     exit(1)
 
 device = Dobot(port=available_ports[0])
-device.start()
 
 time.sleep(0.5)
 device.speed(100)
-device.go(250.0, 0.0, -25.0)
-device.speed(10)
 device.go(250.0, 0.0, 25.0)
+device.speed(10)
+device.go(250.0, 0.0, 0.0)
 time.sleep(2)
 device.close()
 
