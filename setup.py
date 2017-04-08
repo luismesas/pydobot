@@ -1,7 +1,7 @@
 import os
 from distutils.core import setup
 
-build_num = os.environ['CIRCLECI_BUILD_NUM']
+build_num = os.environ['CIRCLE_BUILD_NUM']
 
 setup(
     name='pydobot',
