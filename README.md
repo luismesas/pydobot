@@ -6,6 +6,13 @@ Python library for Dobot Magician
 Based on Communication Protocol V1.0.4 (_latest version [here](http://dobot.cc/download-center/dobot-magician.html)_)
 
 
+Installation
+---
+
+```
+pip install pydobot
+```
+
 Samples
 ---
 
