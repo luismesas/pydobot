@@ -19,7 +19,9 @@ class Message:
 
     def __str__(self):
         self.refresh()
-        ret = "%s:%d:%d:%d:%s:%s" % (self.header.hex(), self.len, self.id, self.ctrl, self.params.hex(), self.checksum)
+        hexHeader = " ".join("%02x" % b for b in self.header)
+        hexParams = " ".join("%02x" % b for b in self.params)
+        ret = "%s:%d:%d:%d:%s:%s" % (hexHeader, self.len, self.id, self.ctrl, hexParams, self.checksum)
         return ret.upper()
 
     def refresh(self):
