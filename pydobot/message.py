@@ -28,7 +28,10 @@ class Message:
         if self.checksum is None:
             self.checksum = self.id + self.ctrl
             for i in range(len(self.params)):
-                self.checksum += self.params[i]
+                if isinstance(self.params[i], int):
+                    self.checksum += self.params[i]
+                else:
+                    self.checksum += int(self.params[i].encode('hex'), 16)
             self.checksum = self.checksum % 256
             self.checksum = 2 ** 8 - self.checksum
             self.checksum = self.checksum % 256
