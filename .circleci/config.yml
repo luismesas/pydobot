@@ -4,7 +4,7 @@ jobs:
     docker:
       - image: "python:3.6"
     steps:
-      - checkout
+#      - checkout
       - run: envsubst < setup.py.template > setup.py
       - run: cat setup.py
       - run: python setup.py sdist
