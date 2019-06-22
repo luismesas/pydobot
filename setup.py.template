@@ -1,10 +1,15 @@
 from distutils.core import setup
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
 setup(
     name='pydobot',
     packages=['pydobot'],
     version='0.9.${CIRCLE_BUILD_NUM}',
     description='Python library for Dobot Magician',
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     author='Luis Mesas',
     author_email='luismesas@gmail.com',
     url='https://github.com/luismesas/pydobot',
