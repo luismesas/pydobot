@@ -5,7 +5,8 @@ jobs:
       - image: "python:3.6"
     steps:
       - checkout
-      - run: apt-get install gettext-base
+      - run: apt update
+      - run: apt install gettext-base
       - run: envsubst < setup.py.template > setup.py
       - run: cat setup.py
       - run: python setup.py sdist
