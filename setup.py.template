@@ -17,6 +17,6 @@ setuptools.setup(
     keywords=['dobot', 'magician', 'robotics'],
     classifiers=[],
     install_requires=[
-        'pyserial'
+        'pyserial==3.4'
     ]
 )
