@@ -1,16 +1,15 @@
 version: 2.0
-
 jobs:
   build:
     docker:
       - image: python:3.6
     steps:
-      - envsubst < setup.py.template > setup.py
-      - cat setup.py
-      - python setup.py sdist
-      - pip install twine
-      - twine upload dist/*
-
+      - checkout
+      - run: envsubst < setup.py.template > setup.py
+      - run: cat setup.py
+      - run: python setup.py sdist
+      - run: pip install twine
+      - run: twine upload dist/*
 workflows:
   version: 2
   build:
