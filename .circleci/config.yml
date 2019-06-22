@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  publish:
+  deploy:
     docker:
       - image: "python:3.6"
     steps:
@@ -10,11 +10,6 @@ jobs:
       - run: python setup.py sdist
       - run: pip install twine
       - run: twine upload dist/*
-workflows:
-  version: 2
-  build:
-    jobs:
-      - publish
-          filters:
-            branches:
-              only: master
+    branches:
+      only:
+        - master
