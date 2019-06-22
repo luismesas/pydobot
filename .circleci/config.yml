@@ -1,0 +1,21 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: python:3.6
+    steps:
+      - envsubst < setup.py.template > setup.py
+      - cat setup.py
+      - python setup.py sdist
+      - pip install twine
+      - twine upload dist/*
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build
+          filters:
+            branches:
+              only: master
