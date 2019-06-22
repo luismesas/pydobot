@@ -179,6 +179,18 @@ class Dobot:
             msg.params.extend(bytearray([0x00]))
         return self._send_command(msg)
 
+    def _set_end_effector_gripper(self, grip=False):
+        msg = Message()
+        msg.id = 63
+        msg.ctrl = 0x03
+        msg.params = bytearray([])
+        msg.params.extend(bytearray([0x01]))
+        if grip is True:
+            msg.params.extend(bytearray([0x01]))
+        else:
+            msg.params.extend(bytearray([0x00]))
+        return self._send_command(msg)
+
     def _set_queued_cmd_start_exec(self):
         msg = Message()
         msg.id = 240
@@ -210,6 +222,9 @@ class Dobot:
 
     def suck(self, suck):
         self._set_end_effector_suction_cup(suck)
+
+    def grip(self, grip):
+        self._set_end_effector_gripper(grip)
 
     def speed(self, velocity=100., acceleration=100.):
         self._set_ptp_common_params(velocity, acceleration)
