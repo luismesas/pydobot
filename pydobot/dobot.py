@@ -167,25 +167,25 @@ class Dobot:
         msg.params.extend(bytearray(struct.pack('f', r)))
         return self._send_command(msg)
 
-    def _set_end_effector_suction_cup(self, suck=False):
+    def _set_end_effector_suction_cup(self, enable=False):
         msg = Message()
         msg.id = 62
         msg.ctrl = 0x03
         msg.params = bytearray([])
         msg.params.extend(bytearray([0x01]))
-        if suck is True:
+        if enable is True:
             msg.params.extend(bytearray([0x01]))
         else:
             msg.params.extend(bytearray([0x00]))
         return self._send_command(msg)
 
-    def _set_end_effector_gripper(self, grip=False):
+    def _set_end_effector_gripper(self, enable=False):
         msg = Message()
         msg.id = 63
         msg.ctrl = 0x03
         msg.params = bytearray([])
         msg.params.extend(bytearray([0x01]))
-        if grip is True:
+        if enable is True:
             msg.params.extend(bytearray([0x01]))
         else:
             msg.params.extend(bytearray([0x00]))
@@ -220,11 +220,11 @@ class Dobot:
     def go(self, x, y, z, r=0.):
         self._set_ptp_cmd(x, y, z, r, mode=MODE_PTP_MOVL_XYZ)
 
-    def suck(self, suck):
-        self._set_end_effector_suction_cup(suck)
+    def suck(self, enable):
+        self._set_end_effector_suction_cup(enable)
 
-    def grip(self, grip):
-        self._set_end_effector_gripper(grip)
+    def grip(self, enable):
+        self._set_end_effector_gripper(enable)
 
     def speed(self, velocity=100., acceleration=100.):
         self._set_ptp_common_params(velocity, acceleration)
