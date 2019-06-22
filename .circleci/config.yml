@@ -1,7 +1,8 @@
+version: 2
 jobs:
   publish:
     docker:
-      - image: python:3.6
+      - image: "python:3.6"
     steps:
       - checkout
       - run: envsubst < setup.py.template > setup.py
