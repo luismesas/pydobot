@@ -1,6 +1,7 @@
 import struct
 import threading
 import time
+import warnings
 
 import serial
 
@@ -19,20 +20,12 @@ MODE_PTP_JUMP_MOVL_XYZ = 0x09
 
 
 class Dobot:
-    on = True
-    x = 0.0
-    y = 0.0
-    z = 0.0
-    r = 0.0
-    j1 = 0.0
-    j2 = 0.0
-    j3 = 0.0
-    j4 = 0.0
-
-    # joint_angles = [4]
 
     def __init__(self, port, verbose=False):
         threading.Thread.__init__(self)
+
+        self._on = True
+
         self.verbose = verbose
         self.lock = threading.Lock()
         self.ser = serial.Serial(port,
@@ -53,18 +46,37 @@ class Dobot:
         self._get_pose()
 
     def close(self):
-        self.on = False
+        self._on = False
         self.lock.acquire()
         self.ser.close()
         if self.verbose:
             print('pydobot: %s closed' % self.ser.name)
         self.lock.release()
 
-    def _send_command(self, msg):
+    def _send_command(self, msg, wait=False):
         self.lock.acquire()
         self._send_message(msg)
         response = self._read_message()
         self.lock.release()
+
+        if not wait:
+            return response
+
+        expected_idx = struct.unpack_from('L', response.params, 0)[0]
+        if self.verbose:
+            print('pydobot: waiting for command', expected_idx)
+
+        while True:
+            current_idx = self._get_queued_cmd_current_index()
+
+            if current_idx != expected_idx:
+                time.sleep(0.1)
+                continue
+
+            if self.verbose:
+                print('pydobot: command %d executed' % current_idx)
+            break
+
         return response
 
     def _send_message(self, msg):
@@ -155,7 +167,7 @@ class Dobot:
         msg.params.extend(bytearray(struct.pack('f', acceleration)))
         return self._send_command(msg)
 
-    def _set_ptp_cmd(self, x, y, z, r, mode):
+    def _set_ptp_cmd(self, x, y, z, r, mode, wait):
         msg = Message()
         msg.id = 84
         msg.ctrl = 0x03
@@ -165,7 +177,7 @@ class Dobot:
         msg.params.extend(bytearray(struct.pack('f', y)))
         msg.params.extend(bytearray(struct.pack('f', z)))
         msg.params.extend(bytearray(struct.pack('f', r)))
-        return self._send_command(msg)
+        return self._send_command(msg, wait)
 
     def _set_end_effector_suction_cup(self, enable=False):
         msg = Message()
@@ -212,13 +224,16 @@ class Dobot:
     def _get_queued_cmd_current_index(self):
         msg = Message()
         msg.id = 246
-        msg.ctrl = 0x01
         response = self._send_command(msg)
-        idx = struct.unpack_from('f', response.params, 0)[0]
-        print(idx)
+        idx = struct.unpack_from('L', response.params, 0)[0]
+        return idx
 
     def go(self, x, y, z, r=0.):
-        self._set_ptp_cmd(x, y, z, r, mode=MODE_PTP_MOVL_XYZ)
+        warnings.warn('go() is deprecated, use move_to() instead')
+        self.move_to(x, y, z, r)
+
+    def move_to(self, x, y, z, r, wait=False):
+        self._set_ptp_cmd(x, y, z, r, mode=MODE_PTP_MOVL_XYZ, wait=wait)
 
     def suck(self, enable):
         self._set_end_effector_suction_cup(enable)

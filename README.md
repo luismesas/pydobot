@@ -47,11 +47,12 @@ Methods
     * **j2**: _float_ current joint 2 angle 
     * **j3**: _float_ current joint 3 angle 
     * **j4**: _float_ current joint 4 angle 
-* **.go(x,y,z,r)** queues a translation in dobot to given coordinates
+* **.move_to(x, y, z, r, wait=False)** queues a translation in dobot to given coordinates
     * **x**: _float_ x cartesian coordinate to move 
     * **y**: _float_ y cartesian coordinate to move 
     * **z**: _float_ z cartesian coordinate to move 
     * **r**: _float_ r effector rotation 
+    * **wait**: _bool_ waits until command has been executed to return to process
 * **.speed(velocity, acceleration)** changes velocity and acceleration at which the dobot moves to future coordinates
     * **velocity**: _float_ desired translation velocity 
     * **acceleration**: _float_ desired translation acceleration 
