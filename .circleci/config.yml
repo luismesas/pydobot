@@ -1,6 +1,6 @@
 version: 2.0
 jobs:
-  build:
+  publish:
     docker:
       - image: python:3.6
     steps:
@@ -14,7 +14,7 @@ workflows:
   version: 2
   build:
     jobs:
-      - build
+      - publish
           filters:
             branches:
               only: master
