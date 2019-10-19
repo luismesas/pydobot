@@ -280,7 +280,7 @@ class Dobot:
     def grip(self, enable):
         self._set_end_effector_gripper(enable)
 
-    def laze(self, power, enable):
+    def laze(self, power=0, enable=False):
         self._set_end_effector_laser(power, enable)
 
     def speed(self, velocity=100., acceleration=100.):
