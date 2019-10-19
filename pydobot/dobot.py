@@ -203,6 +203,24 @@ class Dobot:
             msg.params.extend(bytearray([0x00]))
         return self._send_command(msg)
 
+    def _set_end_effector_laser(self, power=255, enable=False):
+        """Enables the laser. Power from 0 to 255. """
+        msg = Message()
+        msg.id = 61
+        msg.ctrl = 0x03
+        msg.params = bytearray([])
+        #msg.params.extend(bytearray([0x01]))
+        if enable is True:
+            msg.params.extend(bytearray([0x01, power]))
+        else:
+            msg.params.extend(bytearray([0x00, power]))
+        #msg.params.extend(bytearray(255))
+        print("sending ")
+        print(msg)
+        return self._send_command(msg)
+
+
+
     def _set_queued_cmd_start_exec(self):
         msg = Message()
         msg.id = 240
@@ -235,7 +253,9 @@ class Dobot:
         msg.params = bytearray([])
         return self._send_command(msg,wait)
 
-    def set_home(self, wait=False):
+    def set_home(self, wait=True):
+        """Runs the homing procedure.
+           Does not properly wait for completion yet."""
         self._set_home(wait)
 
     def go(self, x, y, z, r=0.):
@@ -250,6 +270,9 @@ class Dobot:
 
     def grip(self, enable):
         self._set_end_effector_gripper(enable)
+
+    def laze(self, power, enable):
+        self._set_end_effector_laser(power, enable)
 
     def speed(self, velocity=100., acceleration=100.):
         self._set_ptp_common_params(velocity, acceleration)
