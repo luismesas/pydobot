@@ -228,6 +228,16 @@ class Dobot:
         idx = struct.unpack_from('L', response.params, 0)[0]
         return idx
 
+    def _set_home(self,wait):
+        msg = Message()
+        msg.id = 31
+        msg.ctrl = 0x01
+        msg.params = bytearray([])
+        return self._send_command(msg,wait)
+
+    def set_home(self, wait=False):
+        self._set_home(wait)
+
     def go(self, x, y, z, r=0.):
         warnings.warn('go() is deprecated, use move_to() instead')
         self.move_to(x, y, z, r)
