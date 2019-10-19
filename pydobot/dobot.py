@@ -211,12 +211,11 @@ class Dobot:
         msg.params = bytearray([])
         #msg.params.extend(bytearray([0x01]))
         if enable is True:
-            msg.params.extend(bytearray([0x01, power]))
+            msg.params.extend(bytearray([0x01]))
         else:
-            msg.params.extend(bytearray([0x00, power]))
-        #msg.params.extend(bytearray(255))
-        print("sending ")
-        print(msg)
+            msg.params.extend(bytearray([0x00]))
+        # Assuming the last byte is power. Seems to have little effect
+        msg.params.extend(bytearray([power])) 
         return self._send_command(msg)
 
 
