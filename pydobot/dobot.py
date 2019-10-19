@@ -4,6 +4,7 @@ import time
 import warnings
 
 import serial
+from serial.tools import list_ports
 
 from pydobot.message import Message
 
@@ -21,13 +22,22 @@ MODE_PTP_JUMP_MOVL_XYZ = 0x09
 
 class Dobot:
 
-    def __init__(self, port, verbose=False):
+    def __init__(self, port=False, verbose=False):
         threading.Thread.__init__(self)
 
         self._on = True
 
         self.verbose = verbose
         self.lock = threading.Lock()
+        if(not port):
+            # Find the serial port
+            ports = list_ports.comports()
+            for thing in ports:
+              if(thing.vid == 4292):
+                  if self.verbose:
+                    print("Found a com port to talk to DOBOT.")
+                    print(thing)
+                  port = thing.device
         self.ser = serial.Serial(port,
                                  baudrate=115200,
                                  parity=serial.PARITY_NONE,
@@ -215,7 +225,7 @@ class Dobot:
         else:
             msg.params.extend(bytearray([0x00]))
         # Assuming the last byte is power. Seems to have little effect
-        msg.params.extend(bytearray([power])) 
+        msg.params.extend(bytearray([power]))
         return self._send_command(msg)
 
 
