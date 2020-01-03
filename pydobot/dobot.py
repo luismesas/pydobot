@@ -47,17 +47,15 @@ class Dobot:
 
     def close(self):
         self._on = False
-        self.lock.acquire()
-        self.ser.close()
-        if self.verbose:
-            print('pydobot: %s closed' % self.ser.name)
-        self.lock.release()
+        with self.lock:
+            self.ser.close()
+            if self.verbose:
+                print('pydobot: %s closed' % self.ser.name)
 
     def _send_command(self, msg, wait=False):
-        self.lock.acquire()
-        self._send_message(msg)
-        response = self._read_message()
-        self.lock.release()
+        with self.lock:
+            self._send_message(msg)
+            response = self._read_message()
 
         if not wait:
             return response
