@@ -4,6 +4,7 @@ import time
 import warnings
 
 import serial
+from serial.tools import list_ports
 
 from pydobot.message import Message
 
@@ -21,13 +22,22 @@ MODE_PTP_JUMP_MOVL_XYZ = 0x09
 
 class Dobot:
 
-    def __init__(self, port, verbose=False):
+    def __init__(self, port=False, verbose=False):
         threading.Thread.__init__(self)
 
         self._on = True
 
         self.verbose = verbose
         self.lock = threading.Lock()
+        if(not port):
+            # Find the serial port
+            ports = list_ports.comports()
+            for thing in ports:
+              if(thing.vid == 4292):
+                  if self.verbose:
+                    print("Found a com port to talk to DOBOT.")
+                    print(thing)
+                  port = thing.device
         self.ser = serial.Serial(port,
                                  baudrate=115200,
                                  parity=serial.PARITY_NONE,
@@ -201,6 +211,23 @@ class Dobot:
             msg.params.extend(bytearray([0x00]))
         return self._send_command(msg)
 
+    def _set_end_effector_laser(self, power=255, enable=False):
+        """Enables the laser. Power from 0 to 255. """
+        msg = Message()
+        msg.id = 61
+        msg.ctrl = 0x03
+        msg.params = bytearray([])
+        #msg.params.extend(bytearray([0x01]))
+        if enable is True:
+            msg.params.extend(bytearray([0x01]))
+        else:
+            msg.params.extend(bytearray([0x00]))
+        # Assuming the last byte is power. Seems to have little effect
+        msg.params.extend(bytearray([power]))
+        return self._send_command(msg)
+
+
+
     def _set_queued_cmd_start_exec(self):
         msg = Message()
         msg.id = 240
@@ -226,6 +253,18 @@ class Dobot:
         idx = struct.unpack_from('L', response.params, 0)[0]
         return idx
 
+    def _set_home(self,wait):
+        msg = Message()
+        msg.id = 31
+        msg.ctrl = 0x01
+        msg.params = bytearray([])
+        return self._send_command(msg,wait)
+
+    def set_home(self, wait=True):
+        """Runs the homing procedure.
+           Does not properly wait for completion yet."""
+        self._set_home(wait)
+
     def go(self, x, y, z, r=0.):
         warnings.warn('go() is deprecated, use move_to() instead')
         self.move_to(x, y, z, r)
@@ -238,6 +277,9 @@ class Dobot:
 
     def grip(self, enable):
         self._set_end_effector_gripper(enable)
+
+    def laze(self, power=0, enable=False):
+        self._set_end_effector_laser(power, enable)
 
     def speed(self, velocity=100., acceleration=100.):
         self._set_ptp_common_params(velocity, acceleration)
