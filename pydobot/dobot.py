@@ -467,7 +467,7 @@ class Dobot:
                 self._set_queued_cmd_start_exec()
                 stopped = False
 
-            if row_idx % 2 == 0:
+            if row_idx % 2 == 1:
                 data = reversed(row)
                 rev = True
             else:
