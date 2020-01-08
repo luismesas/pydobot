@@ -1,11 +1,13 @@
 import struct
 import threading
-import time
 
 import serial
 from serial.tools import list_ports
+from _collections import deque
 
 from pydobot.message import Message
+
+MAX_QUEUE_LEN = 32
 
 MODE_PTP_JUMP_XYZ = 0x00
 MODE_PTP_MOVJ_XYZ = 0x01
@@ -18,8 +20,8 @@ MODE_PTP_MOVL_INC = 0x07
 MODE_PTP_MOVJ_XYZ_INC = 0x08
 MODE_PTP_JUMP_MOVL_XYZ = 0x09
 
-STEP_PER_CRICLE = 360.0 / 1.8 * 10.0 * 16.0
-MM_PER_CRICLE = 3.1415926535898 * 36.0
+STEP_PER_CIRCLE = 360.0 / 1.8 * 10.0 * 16.0
+MM_PER_CIRCLE = 3.1415926535898 * 36.0
 
 
 class DobotException(Exception):
@@ -76,7 +78,7 @@ class Dobot:
             return self._read_message()
 
     def _send_message(self, msg):
-        time.sleep(0.1)
+
         if self.verbose:
             print('pydobot: >>', msg)
         self.ser.write(msg.bytes())
@@ -270,7 +272,7 @@ class Dobot:
             if self.verbose:
                 print("Current-ID", current_cmd_id)
                 print("Waiting for", cmd_id)
-            time.sleep(0.5)
+
             current_cmd_id = self._get_queued_cmd_current_index()
 
     def _set_home_cmd(self):
@@ -325,11 +327,11 @@ class Dobot:
         return self._extract_cmd_index(self._set_end_effector_gripper(enable))
 
     def laze(self, power=0, enable=False):
-        self._set_end_effector_laser(power, enable)
+        return self._extract_cmd_index(self._set_end_effector_laser(power, enable))
 
     def speed(self, velocity=100., acceleration=100.):
-        self._set_ptp_common_params(velocity, acceleration)
-        self._set_ptp_coordinate_params(velocity, acceleration)
+        self.wait_for_cmd(self._extract_cmd_index(self._set_ptp_common_params(velocity, acceleration)))
+        self.wait_for_cmd(self._extract_cmd_index(self._set_ptp_coordinate_params(velocity, acceleration)))
 
     def pose(self):
         response = self._get_pose()
@@ -345,7 +347,7 @@ class Dobot:
 
     def conveyor_belt(self, speed, direction=1, interface=0):
         if 0.0 <= speed <= 1.0 and (direction == 1 or direction == -1):
-            motor_speed = 70 * speed * STEP_PER_CRICLE / MM_PER_CRICLE * direction
+            motor_speed = 70 * speed * STEP_PER_CIRCLE / MM_PER_CIRCLE * direction
             self._set_stepper_motor(motor_speed, interface)
         else:
             raise DobotException("Wrong Parameter")
@@ -368,7 +370,7 @@ class Dobot:
 
     def conveyor_belt_distance(self, speed, distance, direction=1, interface=0):
         if 0.0 <= speed <= 100.0 and (direction == 1 or direction == -1):
-            motor_speed = speed * STEP_PER_CRICLE / MM_PER_CRICLE * direction
+            motor_speed = speed * STEP_PER_CIRCLE / MM_PER_CIRCLE * direction
             self._set_stepper_motor_distance(motor_speed, distance, interface)
         else:
             raise DobotException("Wrong Parameter")
@@ -389,3 +391,120 @@ class Dobot:
         msg.params.extend(bytearray(struct.pack('i', speed)))
         msg.params.extend(bytearray(struct.pack('I', distance)))
         return self._send_command(msg)
+
+    def _set_cp_params(self, velocity, acceleration, period):
+
+        msg = Message()
+        msg.id = 90
+        msg.ctrl = 0x3
+        msg.params = bytearray([])
+        msg.params.extend(bytearray(struct.pack('f', acceleration)))
+        msg.params.extend(bytearray(struct.pack('f', velocity)))
+        msg.params.extend(bytearray(struct.pack('f', period)))
+        msg.params.extend(bytearray([0x0]))  # non real-time mode (what does it mean??)
+        return self._send_command(msg)
+
+    def _set_cple_cmd(self, x, y, z, power, absolute=False):
+
+        assert 0 <= power <= 100
+
+        msg = Message()
+        msg.id = 92
+        msg.ctrl = 0x3
+        msg.params = bytearray([int(absolute)])
+        msg.params.extend(bytearray(struct.pack('f', x)))
+        msg.params.extend(bytearray(struct.pack('f', y)))
+        msg.params.extend(bytearray(struct.pack('f', z)))
+        msg.params.extend(bytearray(struct.pack('f', power)))
+        return self._send_command(msg)
+
+    def engrave(self, image, pixel_size, low=0.0, high=40.0, velocity=5, acceleration=5, actual_acceleration=5):
+        """
+        Shade engrave the given image.
+        :param image: NumPy array representing the image. Should be 8 bit grayscale image.
+        :param pixel_size: Pixel size in mm.
+        :param low: Image values will be scaled to range of <low, high>.
+        :param high: dtto
+        :param velocity: Maximum junction velocity (CPParams).
+        :param acceleration: Maximum planned accelerations (CPParams).
+        :param actual_acceleration: Maximum actual acceleration, used in non-real-time mode.
+        :return:
+
+        Example usage:
+
+        >>> from PIL import Image
+        >>> import numpy as np
+        >>> d = Dobot()
+        >>> im = Image.open("image.jpg")
+        >>> im = im.convert("L")
+        >>> im = np.array(im)
+
+        >>> x, y = d.pose()[0:2]
+        >>> d.wait_for_cmd(d.move_to(x, y, -74.0))
+
+        >>> d.engrave(im, 0.1)
+        """
+
+        image = image.astype("float64")
+        image = 255.0 - image
+        image = (image - image.min()) / (image.max() - image.min()) * (high - low) + low
+
+        x, y, z = self.pose()[0:3]  # get current/starting position
+
+        self.wait_for_cmd(self.laze(0, False))
+        self._set_queued_cmd_clear()
+        self.wait_for_cmd(self._extract_cmd_index(self._set_cp_params(velocity, acceleration, actual_acceleration)))
+
+        self._set_queued_cmd_stop_exec()
+        stopped = True
+
+        indexes = deque()
+
+        for row_idx, row in enumerate(image):
+
+            # first feed the queue to be almost full
+            if stopped and len(indexes) > MAX_QUEUE_LEN-2:
+                self._set_queued_cmd_start_exec()
+                stopped = False
+
+            if row_idx % 2 == 0:
+                data = reversed(row)
+                rev = True
+            else:
+                data = row
+                rev = False
+
+            for col_idx, ld in enumerate(data):
+
+                if not rev:
+                    y_ofs = col_idx * pixel_size
+                else:
+                    y_ofs = (len(row)-1 - col_idx) * pixel_size
+
+                indexes.append(
+                    self._extract_cmd_index(self._set_cple_cmd(x + row_idx * pixel_size,
+                                                               y + y_ofs,
+                                                               z,
+                                                               ld, True)))
+
+                # then feed it as necessary to keep it almost full
+                while not stopped and len(indexes) > MAX_QUEUE_LEN-12:
+                    self.wait_for_cmd(indexes.popleft())
+
+        self.wait_for_cmd(self.laze(0, False))
+
+
+if __name__ == '__main__':
+    d = Dobot()
+
+    from PIL import Image
+    import numpy as np
+
+    im = Image.open("pasovka.jpg")
+    im = im.convert("L")
+    im = np.array(im)
+
+    x, y = d.pose()[0:2]
+    d.wait_for_cmd(d.move_to(x, y, -74.0))
+
+    d.engrave(im, 0.05, 0, 40, 100, 100, 100)
