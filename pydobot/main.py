@@ -6,6 +6,7 @@ import warnings
 
 from pydobot.message import Message
 from pydobot.ptpMode import PtPMode
+from pydobot.CommunicationProtocolIDs import CommunicationProtocolIDs
 
 
 class Dobot:
@@ -86,7 +87,7 @@ class Dobot:
 
     def _get_pose(self):
         msg = Message()
-        msg.id = 10
+        msg.id = CommunicationProtocolIDs.GETPOSE
         response = self._send_command(msg)
         self.x = struct.unpack_from('f', response.params, 0)[0]
         self.y = struct.unpack_from('f', response.params, 4)[0]
@@ -103,7 +104,7 @@ class Dobot:
 
     def _set_cp_cmd(self, x, y, z):
         msg = Message()
-        msg.id = 91
+        msg.id = CommunicationProtocolIDs.SETCPCMD
         msg.ctrl = 0x03
         msg.params = bytearray(bytes([0x01]))
         msg.params.extend(bytearray(struct.pack('f', x)))
@@ -114,7 +115,7 @@ class Dobot:
 
     def _set_ptp_joint_params(self, v_x, v_y, v_z, v_r, a_x, a_y, a_z, a_r):
         msg = Message()
-        msg.id = 80
+        msg.id = CommunicationProtocolIDs.SETGETPTPJOINTPARAMS
         msg.ctrl = 0x03
         msg.params = bytearray([])
         msg.params.extend(bytearray(struct.pack('f', v_x)))
@@ -129,7 +130,7 @@ class Dobot:
 
     def _set_ptp_coordinate_params(self, velocity, acceleration):
         msg = Message()
-        msg.id = 81
+        msg.id = CommunicationProtocolIDs.SETGETPTPCOORDINATEPARAMS
         msg.ctrl = 0x03
         msg.params = bytearray([])
         msg.params.extend(bytearray(struct.pack('f', velocity)))
@@ -140,7 +141,7 @@ class Dobot:
 
     def _set_ptp_jump_params(self, jump, limit):
         msg = Message()
-        msg.id = 82
+        msg.id = CommunicationProtocolIDs.SETGETPTPJUMPPARAMS
         msg.ctrl = 0x03
         msg.params = bytearray([])
         msg.params.extend(bytearray(struct.pack('f', jump)))
@@ -149,7 +150,7 @@ class Dobot:
 
     def _set_ptp_common_params(self, velocity, acceleration):
         msg = Message()
-        msg.id = 83
+        msg.id = CommunicationProtocolIDs.SETGETPTPCOMMONPARAMS
         msg.ctrl = 0x03
         msg.params = bytearray([])
         msg.params.extend(bytearray(struct.pack('f', velocity)))
@@ -158,7 +159,7 @@ class Dobot:
 
     def _set_ptp_cmd(self, x, y, z, r, mode, wait):
         msg = Message()
-        msg.id = 84
+        msg.id = CommunicationProtocolIDs.SETPTPCMD
         msg.ctrl = 0x03
         msg.params = bytearray([])
         msg.params.extend(bytearray([mode]))
@@ -170,7 +171,7 @@ class Dobot:
 
     def _set_end_effector_suction_cup(self, enable=False):
         msg = Message()
-        msg.id = 62
+        msg.id = CommunicationProtocolIDs.SETGETENDEFFECTORSUCTIONCUP
         msg.ctrl = 0x03
         msg.params = bytearray([])
         msg.params.extend(bytearray([0x01]))
@@ -182,7 +183,7 @@ class Dobot:
 
     def _set_end_effector_gripper(self, enable=False):
         msg = Message()
-        msg.id = 63
+        msg.id = CommunicationProtocolIDs.SETGETENDEFFECTORGRIPPER
         msg.ctrl = 0x03
         msg.params = bytearray([])
         msg.params.extend(bytearray([0x01]))
@@ -194,25 +195,25 @@ class Dobot:
 
     def _set_queued_cmd_start_exec(self):
         msg = Message()
-        msg.id = 240
+        msg.id = CommunicationProtocolIDs.SETQUEUEDCMDSTARTEXEC
         msg.ctrl = 0x01
         return self._send_command(msg)
 
     def _set_queued_cmd_stop_exec(self):
         msg = Message()
-        msg.id = 241
+        msg.id = CommunicationProtocolIDs.SETQUEUEDCMDSTOPEXEC
         msg.ctrl = 0x01
         return self._send_command(msg)
 
     def _set_queued_cmd_clear(self):
         msg = Message()
-        msg.id = 245
+        msg.id = CommunicationProtocolIDs.SETQUEUEDCMDCLEAR
         msg.ctrl = 0x01
         return self._send_command(msg)
 
     def _get_queued_cmd_current_index(self):
         msg = Message()
-        msg.id = 246
+        msg.id = CommunicationProtocolIDs.GETQUEUEDCMDCURRENTINDEX
         response = self._send_command(msg)
         idx = struct.unpack_from('L', response.params, 0)[0]
         return idx
