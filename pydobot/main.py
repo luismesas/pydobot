@@ -7,7 +7,7 @@ import warnings
 from pydobot.message import Message
 from enums.ptpMode import PtPMode
 from enums.CommunicationProtocolIDs import CommunicationProtocolIDs
-from pydobot import ControlValues
+from enums.ControlValues import ControlValues
 
 
 class Main:
