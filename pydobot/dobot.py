@@ -5,12 +5,12 @@ import threading
 import warnings
 
 from message import Message
-from enums.ptpMode import PtPMode
+from enums.PTPMode import PTPMode
 from enums.CommunicationProtocolIDs import CommunicationProtocolIDs
 from enums.ControlValues import ControlValues
 
 
-class Main:
+class Dobot:
 
     def __init__(self, port, verbose=False):
         threading.Thread.__init__(self)
@@ -36,7 +36,6 @@ class Main:
         self._get_pose()
 
 
-    # Private methods
     def _get_queued_cmd_current_index(self):
         msg = Message()
         msg.id = CommunicationProtocolIDs.GET_QUEUED_CMD_CURRENT_INDEX
@@ -111,10 +110,12 @@ class Main:
             print('pydobot: >>', msg)
         self.ser.write(msg.bytes())
 
+    """
+        Executes the CP Command
+    """
     def _set_cp_cmd(self, x, y, z):
         msg = Message()
         msg.id = CommunicationProtocolIDs.SET_CP_CMD
-        msg.ctrl = 0x03
         msg.ctrl = ControlValues.THREE
         msg.params = bytearray(bytes([0x01]))
         msg.params.extend(bytearray(struct.pack('f', x)))
@@ -123,6 +124,9 @@ class Main:
         msg.params.append(0x00)
         return self._send_command(msg)
 
+    """
+        Sets the status of the gripper
+    """
     def _set_end_effector_gripper(self, enable=False):
         msg = Message()
         msg.id = CommunicationProtocolIDs.SET_GET_END_EFFECTOR_GRIPPER
@@ -135,6 +139,9 @@ class Main:
             msg.params.extend(bytearray([0x00]))
         return self._send_command(msg)
 
+    """
+        Sets the status of the suction cup
+    """
     def _set_end_effector_suction_cup(self, enable=False):
         msg = Message()
         msg.id = CommunicationProtocolIDs.SET_GET_END_EFFECTOR_SUCTION_CUP
@@ -147,6 +154,10 @@ class Main:
             msg.params.extend(bytearray([0x00]))
         return self._send_command(msg)
 
+    """
+        Sets the velocity ratio and the acceleration ratio in PTP mode
+
+    """
     def _set_ptp_joint_params(self, v_x, v_y, v_z, v_r, a_x, a_y, a_z, a_r):
         msg = Message()
         msg.id = CommunicationProtocolIDs.SET_GET_PTP_JOINT_PARAMS
@@ -162,6 +173,9 @@ class Main:
         msg.params.extend(bytearray(struct.pack('f', a_r)))
         return self._send_command(msg)
 
+    """
+        Sets the velocity and acceleration of the Cartesian coordinate axes in PTP mode
+    """
     def _set_ptp_coordinate_params(self, velocity, acceleration):
         msg = Message()
         msg.id = CommunicationProtocolIDs.SET_GET_PTP_COORDINATE_PARAMS
@@ -173,6 +187,9 @@ class Main:
         msg.params.extend(bytearray(struct.pack('f', acceleration)))
         return self._send_command(msg)
 
+    """
+       Sets the lifting height and the maximum lifting height in JUMP mode
+    """
     def _set_ptp_jump_params(self, jump, limit):
         msg = Message()
         msg.id = CommunicationProtocolIDs.SET_GET_PTP_JUMP_PARAMS
@@ -182,6 +199,10 @@ class Main:
         msg.params.extend(bytearray(struct.pack('f', limit)))
         return self._send_command(msg)
 
+
+    """
+        Sets the velocity ratio, acceleration ratio in PTP mode
+    """
     def _set_ptp_common_params(self, velocity, acceleration):
         msg = Message()
         msg.id = CommunicationProtocolIDs.SET_GET_PTP_COMMON_PARAMS
@@ -191,6 +212,9 @@ class Main:
         msg.params.extend(bytearray(struct.pack('f', acceleration)))
         return self._send_command(msg)
 
+    """
+        Executes PTP command
+    """
     def _set_ptp_cmd(self, x, y, z, r, mode, wait):
         msg = Message()
         msg.id = CommunicationProtocolIDs.SET_PTP_CMD
@@ -203,18 +227,27 @@ class Main:
         msg.params.extend(bytearray(struct.pack('f', r)))
         return self._send_command(msg, wait)
 
+    """
+        Clears command queue
+    """
     def _set_queued_cmd_clear(self):
         msg = Message()
         msg.id = CommunicationProtocolIDs.SET_QUEUED_CMD_CLEAR
         msg.ctrl = ControlValues.ONE
         return self._send_command(msg)
 
+    """
+        Start command
+    """
     def _set_queued_cmd_start_exec(self):
         msg = Message()
         msg.id = CommunicationProtocolIDs.SET_QUEUED_CMD_START_EXEC
         msg.ctrl = ControlValues.ONE
         return self._send_command(msg)
 
+    """
+        Stop command
+    """
     def _set_queued_cmd_stop_exec(self):
         msg = Message()
         msg.id = CommunicationProtocolIDs.SET_QUEUED_CMD_STOP_EXEC
@@ -234,7 +267,7 @@ class Main:
         self.move_to(x, y, z, r)
 
     def move_to(self, x, y, z, r, wait=False):
-        self._set_ptp_cmd(x, y, z, r, mode=PtPMode.MOVL_XYZ, wait=wait)
+        self._set_ptp_cmd(x, y, z, r, mode=PTPMode.MOVL_XYZ, wait=wait)
 
     def suck(self, enable):
         self._set_end_effector_suction_cup(enable)
