@@ -87,7 +87,7 @@ class Dobot:
 
     def _get_pose(self):
         msg = Message()
-        msg.id = CommunicationProtocolIDs.GETPOSE
+        msg.id = CommunicationProtocolIDs.GET_POSE
         response = self._send_command(msg)
         self.x = struct.unpack_from('f', response.params, 0)[0]
         self.y = struct.unpack_from('f', response.params, 4)[0]
@@ -104,7 +104,7 @@ class Dobot:
 
     def _set_cp_cmd(self, x, y, z):
         msg = Message()
-        msg.id = CommunicationProtocolIDs.SETCPCMD
+        msg.id = CommunicationProtocolIDs.SET_CPCMD
         msg.ctrl = 0x03
         msg.params = bytearray(bytes([0x01]))
         msg.params.extend(bytearray(struct.pack('f', x)))
@@ -115,7 +115,7 @@ class Dobot:
 
     def _set_ptp_joint_params(self, v_x, v_y, v_z, v_r, a_x, a_y, a_z, a_r):
         msg = Message()
-        msg.id = CommunicationProtocolIDs.SETGETPTPJOINTPARAMS
+        msg.id = CommunicationProtocolIDs.SET_GET_PTP_JOINT_PARAMS
         msg.ctrl = 0x03
         msg.params = bytearray([])
         msg.params.extend(bytearray(struct.pack('f', v_x)))
@@ -130,7 +130,7 @@ class Dobot:
 
     def _set_ptp_coordinate_params(self, velocity, acceleration):
         msg = Message()
-        msg.id = CommunicationProtocolIDs.SETGETPTPCOORDINATEPARAMS
+        msg.id = CommunicationProtocolIDs.SET_GET_PTP_COORDINATE_PARAMS
         msg.ctrl = 0x03
         msg.params = bytearray([])
         msg.params.extend(bytearray(struct.pack('f', velocity)))
@@ -141,7 +141,7 @@ class Dobot:
 
     def _set_ptp_jump_params(self, jump, limit):
         msg = Message()
-        msg.id = CommunicationProtocolIDs.SETGETPTPJUMPPARAMS
+        msg.id = CommunicationProtocolIDs.SET_GET_PTP_JUMP_PARAMS
         msg.ctrl = 0x03
         msg.params = bytearray([])
         msg.params.extend(bytearray(struct.pack('f', jump)))
@@ -150,7 +150,7 @@ class Dobot:
 
     def _set_ptp_common_params(self, velocity, acceleration):
         msg = Message()
-        msg.id = CommunicationProtocolIDs.SETGETPTPCOMMONPARAMS
+        msg.id = CommunicationProtocolIDs.SET_GET_PTP_COMMON_PARAMS
         msg.ctrl = 0x03
         msg.params = bytearray([])
         msg.params.extend(bytearray(struct.pack('f', velocity)))
@@ -159,7 +159,7 @@ class Dobot:
 
     def _set_ptp_cmd(self, x, y, z, r, mode, wait):
         msg = Message()
-        msg.id = CommunicationProtocolIDs.SETPTPCMD
+        msg.id = CommunicationProtocolIDs.SET_PTP_CMD
         msg.ctrl = 0x03
         msg.params = bytearray([])
         msg.params.extend(bytearray([mode]))
@@ -171,7 +171,7 @@ class Dobot:
 
     def _set_end_effector_suction_cup(self, enable=False):
         msg = Message()
-        msg.id = CommunicationProtocolIDs.SETGETENDEFFECTORSUCTIONCUP
+        msg.id = CommunicationProtocolIDs.SET_GET_END_EFFECTOR_SUCTION_CUP
         msg.ctrl = 0x03
         msg.params = bytearray([])
         msg.params.extend(bytearray([0x01]))
@@ -183,7 +183,7 @@ class Dobot:
 
     def _set_end_effector_gripper(self, enable=False):
         msg = Message()
-        msg.id = CommunicationProtocolIDs.SETGETENDEFFECTORGRIPPER
+        msg.id = CommunicationProtocolIDs.SET_GET_END_EFFECTOR_GRIPPER
         msg.ctrl = 0x03
         msg.params = bytearray([])
         msg.params.extend(bytearray([0x01]))
@@ -195,25 +195,25 @@ class Dobot:
 
     def _set_queued_cmd_start_exec(self):
         msg = Message()
-        msg.id = CommunicationProtocolIDs.SETQUEUEDCMDSTARTEXEC
+        msg.id = CommunicationProtocolIDs.SET_QUEUED_CMD_START_EXEC
         msg.ctrl = 0x01
         return self._send_command(msg)
 
     def _set_queued_cmd_stop_exec(self):
         msg = Message()
-        msg.id = CommunicationProtocolIDs.SETQUEUEDCMDSTOPEXEC
+        msg.id = CommunicationProtocolIDs.SET_QUEUED_CMD_STOP_EXEC
         msg.ctrl = 0x01
         return self._send_command(msg)
 
     def _set_queued_cmd_clear(self):
         msg = Message()
-        msg.id = CommunicationProtocolIDs.SETQUEUEDCMDCLEAR
+        msg.id = CommunicationProtocolIDs.SET_QUEUED_CMD_CLEAR
         msg.ctrl = 0x01
         return self._send_command(msg)
 
     def _get_queued_cmd_current_index(self):
         msg = Message()
-        msg.id = CommunicationProtocolIDs.GETQUEUEDCMDCURRENTINDEX
+        msg.id = CommunicationProtocolIDs.GET_QUEUED_CMD_CURRENT_INDEX
         response = self._send_command(msg)
         idx = struct.unpack_from('L', response.params, 0)[0]
         return idx
