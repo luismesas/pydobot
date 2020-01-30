@@ -5,8 +5,8 @@ import threading
 import warnings
 
 from pydobot.message import Message
-from pydobot.ptpMode import PtPMode
-from pydobot.CommunicationProtocolIDs import CommunicationProtocolIDs
+from ptpMode import PtPMode
+from CommunicationProtocolIDs import CommunicationProtocolIDs
 
 
 class Dobot:

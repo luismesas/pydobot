@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class CommunicationProtocol(Enum):
+class CommunicationProtocolIDs(Enum):
 
     GETSETDEVICESN = 0
     GETSETDEVICENAME = 1
