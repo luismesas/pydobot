@@ -35,7 +35,9 @@ class Dobot:
         self._set_ptp_common_params(velocity=100, acceleration=100)
         self._get_pose()
 
-
+    """
+        Gets the current command index
+    """
     def _get_queued_cmd_current_index(self):
         msg = Message()
         msg.id = CommunicationProtocolIDs.GET_QUEUED_CMD_CURRENT_INDEX
@@ -43,6 +45,9 @@ class Dobot:
         idx = struct.unpack_from('L', response.params, 0)[0]
         return idx
 
+    """
+        Gets the real-time pose of the Dobot
+    """
     def _get_pose(self):
         msg = Message()
         msg.id = CommunicationProtocolIDs.GET_POSE
