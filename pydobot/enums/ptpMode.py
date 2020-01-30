@@ -5,7 +5,7 @@ from enum import Enum
 # x, y, z, r: float
 # x,y,z,r are the parameters of ptpMode, which can be set as coordinates, joint angles, or angle increments
 
-class PtPMode(Enum):
+class PTPMode(Enum):
     """
     0. JUMP_XYZ, ]
         Jump mode,
