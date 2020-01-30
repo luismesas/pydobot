@@ -1,22 +1,11 @@
+import serial
 import struct
-import threading
 import time
+import threading
 import warnings
 
-import serial
-
 from pydobot.message import Message
-
-MODE_PTP_JUMP_XYZ = 0x00
-MODE_PTP_MOVJ_XYZ = 0x01
-MODE_PTP_MOVL_XYZ = 0x02
-MODE_PTP_JUMP_ANGLE = 0x03
-MODE_PTP_MOVJ_ANGLE = 0x04
-MODE_PTP_MOVL_ANGLE = 0x05
-MODE_PTP_MOVJ_INC = 0x06
-MODE_PTP_MOVL_INC = 0x07
-MODE_PTP_MOVJ_XYZ_INC = 0x08
-MODE_PTP_JUMP_MOVL_XYZ = 0x09
+from pydobot.ptpMode import PtPMode
 
 
 class Dobot:
@@ -233,7 +222,7 @@ class Dobot:
         self.move_to(x, y, z, r)
 
     def move_to(self, x, y, z, r, wait=False):
-        self._set_ptp_cmd(x, y, z, r, mode=MODE_PTP_MOVL_XYZ, wait=wait)
+        self._set_ptp_cmd(x, y, z, r, mode=PtPMode.MODE_PTP_MOVL_XYZ, wait=wait)
 
     def suck(self, enable):
         self._set_end_effector_suction_cup(enable)
