@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class ControlValues(enum):
+class ControlValues(Enum):
 
     ZERO = 0x00
     ONE = 0x01

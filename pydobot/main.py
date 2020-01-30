@@ -4,7 +4,7 @@ import time
 import threading
 import warnings
 
-from pydobot.message import Message
+from message import Message
 from enums.ptpMode import PtPMode
 from enums.CommunicationProtocolIDs import CommunicationProtocolIDs
 from enums.ControlValues import ControlValues
@@ -37,7 +37,7 @@ class Main:
 
 
     # Private methods
-     def _get_queued_cmd_current_index(self):
+    def _get_queued_cmd_current_index(self):
         msg = Message()
         msg.id = CommunicationProtocolIDs.GET_QUEUED_CMD_CURRENT_INDEX
         response = self._send_command(msg)
@@ -56,8 +56,16 @@ class Main:
         self.j2 = struct.unpack_from('f', response.params, 20)[0]
         self.j3 = struct.unpack_from('f', response.params, 24)[0]
         self.j4 = struct.unpack_from('f', response.params, 28)[0]
+
         if self.verbose:
-            print("pydobot: x:%03.1f y:%03.1f z:%03.1f r:%03.1f j1:%03.1f j2:%03.1f j3:%03.1f j4:%03.1f" %
+            print("pydobot: x:%03.1f \
+                            y:%03.1f \
+                            z:%03.1f \
+                            r:%03.1f \
+                            j1:%03.1f \
+                            j2:%03.1f \
+                            j3:%03.1f \
+                            j4:%03.1f" %
                   (self.x, self.y, self.z, self.r, self.j1, self.j2, self.j3, self.j4))
         return response
 
@@ -139,7 +147,7 @@ class Main:
             msg.params.extend(bytearray([0x00]))
         return self._send_command(msg)
 
-def _set_ptp_joint_params(self, v_x, v_y, v_z, v_r, a_x, a_y, a_z, a_r):
+    def _set_ptp_joint_params(self, v_x, v_y, v_z, v_r, a_x, a_y, a_z, a_r):
         msg = Message()
         msg.id = CommunicationProtocolIDs.SET_GET_PTP_JOINT_PARAMS
         msg.ctrl = ControlValues.THREE
