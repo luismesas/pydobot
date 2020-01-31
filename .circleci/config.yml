@@ -7,7 +7,7 @@ jobs:
       - checkout
       - run: apt update
       - run: apt install gettext-base
-      - run: envsubst < setup.py.template > setup.py
+      - run: envsubst < setup.py > setup.py
       - run: cat setup.py
       - run: python setup.py sdist
       - run: pip install twine

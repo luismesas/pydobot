@@ -6,14 +6,14 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name='pydobot',
     packages=['pydobot'],
-    version='1.0.2',
+    version='1.1.0',
     description='Python library for Dobot Magician',
     long_description=long_description,
     long_description_content_type='text/markdown',
     author='Luis Mesas',
     author_email='luismesas@gmail.com',
     url='https://github.com/luismesas/pydobot',
-    download_url='https://github.com/luismesas/pydobot/archive/v1.0.2.tar.gz',
+    download_url='https://github.com/luismesas/pydobot/archive/v1.1.0.tar.gz',
     keywords=['dobot', 'magician', 'robotics'],
     classifiers=[],
     install_requires=[
