@@ -161,7 +161,6 @@ class Dobot:
 
     """
         Sets the velocity ratio and the acceleration ratio in PTP mode
-
     """
     def _set_ptp_joint_params(self, v_x, v_y, v_z, v_r, a_x, a_y, a_z, a_r):
         msg = Message()
