@@ -9,7 +9,7 @@ jobs:
       - run: apt install gettext-base
       - run: envsubst < setup.py > setup.py
       - run: pip install twine
-      - run: python setup.py sdist
+      - run: python setup.py sdist bdist_wheel
       - run: twine upload dist/*
     branches:
       only: master
