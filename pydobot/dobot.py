@@ -1,9 +1,9 @@
 import struct
 import threading
 import time
-import warnings
 
 import serial
+from serial.tools import list_ports
 
 from pydobot.message import Message
 
@@ -18,23 +18,41 @@ MODE_PTP_MOVL_INC = 0x07
 MODE_PTP_MOVJ_XYZ_INC = 0x08
 MODE_PTP_JUMP_MOVL_XYZ = 0x09
 
+STEP_PER_CRICLE = 360.0 / 1.8 * 10.0 * 16.0
+MM_PER_CRICLE = 3.1415926535898 * 36.0
+
+
+class DobotException(Exception):
+    pass
+
 
 class Dobot:
 
-    def __init__(self, port, verbose=False):
-        threading.Thread.__init__(self)
-
-        self._on = True
+    def __init__(self, port=None, verbose=False):
 
         self.verbose = verbose
         self.lock = threading.Lock()
+        if port is None:
+            # Find the serial port
+            ports = list_ports.comports()
+            for thing in ports:
+                if thing.vid in (4292, 6790):
+                    if self.verbose:
+                        print("Found a com port to talk to DOBOT.")
+                        print(thing)
+                    port = thing.device
+                    break
+            else:
+                raise DobotException("Device not found!")
+
         self.ser = serial.Serial(port,
                                  baudrate=115200,
                                  parity=serial.PARITY_NONE,
                                  stopbits=serial.STOPBITS_ONE,
                                  bytesize=serial.EIGHTBITS)
-        is_open = self.ser.isOpen()
+
         if self.verbose:
+            is_open = self.ser.isOpen()
             print('pydobot: %s open' % self.ser.name if is_open else 'failed to open serial port')
 
         self._set_queued_cmd_start_exec()
@@ -46,38 +64,16 @@ class Dobot:
         self._get_pose()
 
     def close(self):
-        self._on = False
-        self.lock.acquire()
-        self.ser.close()
-        if self.verbose:
-            print('pydobot: %s closed' % self.ser.name)
-        self.lock.release()
-
-    def _send_command(self, msg, wait=False):
-        self.lock.acquire()
-        self._send_message(msg)
-        response = self._read_message()
-        self.lock.release()
-
-        if not wait:
-            return response
-
-        expected_idx = struct.unpack_from('L', response.params, 0)[0]
-        if self.verbose:
-            print('pydobot: waiting for command', expected_idx)
-
-        while True:
-            current_idx = self._get_queued_cmd_current_index()
-
-            if current_idx != expected_idx:
-                time.sleep(0.1)
-                continue
-
+        with self.lock:
+            self.ser.close()
             if self.verbose:
-                print('pydobot: command %d executed' % current_idx)
-            break
+                print('pydobot: %s closed' % self.ser.name)
 
-        return response
+    def _send_command(self, msg):
+        with self.lock:
+            self.ser.reset_input_buffer()
+            self._send_message(msg)
+            return self._read_message()
 
     def _send_message(self, msg):
         time.sleep(0.1)
@@ -86,13 +82,32 @@ class Dobot:
         self.ser.write(msg.bytes())
 
     def _read_message(self):
-        time.sleep(0.1)
-        b = self.ser.read_all()
-        if len(b) > 0:
-            msg = Message(b)
-            if self.verbose:
-                print('pydobot: <<', msg)
-            return msg
+
+        # Search for begin
+        begin_found = False
+        last_byte = None
+        tries = 5
+        while not begin_found and tries > 0:
+            current_byte = ord(self.ser.read(1))
+            if current_byte == 170:
+                if last_byte == 170:
+                    begin_found = True
+            last_byte = current_byte
+            tries = tries - 1
+        if begin_found:
+            payload_length = ord(self.ser.read(1))
+            payload_checksum = self.ser.read(payload_length + 1)
+            if len(payload_checksum) == payload_length + 1:
+                b = bytearray([0xAA, 0xAA])
+                b.extend(bytearray([payload_length]))
+                b.extend(payload_checksum)
+                msg = Message(b)
+                if self.verbose:
+                    print('Lenght', payload_length)
+                    print(payload_checksum)
+                    print('MessageID:', payload_checksum[0])
+                    print('pydobot: <<', ":".join('{:02x}'.format(x) for x in b))
+                return msg
         return
 
     def _get_pose(self):
@@ -167,7 +182,7 @@ class Dobot:
         msg.params.extend(bytearray(struct.pack('f', acceleration)))
         return self._send_command(msg)
 
-    def _set_ptp_cmd(self, x, y, z, r, mode, wait):
+    def _set_ptp_cmd(self, x, y, z, r, mode):
         msg = Message()
         msg.id = 84
         msg.ctrl = 0x03
@@ -177,7 +192,7 @@ class Dobot:
         msg.params.extend(bytearray(struct.pack('f', y)))
         msg.params.extend(bytearray(struct.pack('f', z)))
         msg.params.extend(bytearray(struct.pack('f', r)))
-        return self._send_command(msg, wait)
+        return self._send_command(msg)
 
     def _set_end_effector_suction_cup(self, enable=False):
         msg = Message()
@@ -203,6 +218,21 @@ class Dobot:
             msg.params.extend(bytearray([0x00]))
         return self._send_command(msg)
 
+    def _set_end_effector_laser(self, power=255, enable=False):
+        """Enables the laser. Power from 0 to 255. """
+        msg = Message()
+        msg.id = 61
+        msg.ctrl = 0x03
+        msg.params = bytearray([])
+        # msg.params.extend(bytearray([0x01]))
+        if enable is True:
+            msg.params.extend(bytearray([0x01]))
+        else:
+            msg.params.extend(bytearray([0x00]))
+        # Assuming the last byte is power. Seems to have little effect
+        msg.params.extend(bytearray([power]))
+        return self._send_command(msg)
+
     def _set_queued_cmd_start_exec(self):
         msg = Message()
         msg.id = 240
@@ -225,21 +255,77 @@ class Dobot:
         msg = Message()
         msg.id = 246
         response = self._send_command(msg)
-        idx = struct.unpack_from('L', response.params, 0)[0]
-        return idx
+        if response and response.id == 246:
+            return self._extract_cmd_index(response)
+        else:
+            return -1
 
-    def go(self, x, y, z, r=0.):
-        warnings.warn('go() is deprecated, use move_to() instead')
-        self.move_to(x, y, z, r)
+    @staticmethod
+    def _extract_cmd_index(response):
+        return struct.unpack_from('I', response.params, 0)[0]
 
-    def move_to(self, x, y, z, r, wait=False):
-        self._set_ptp_cmd(x, y, z, r, mode=MODE_PTP_MOVL_XYZ, wait=wait)
+    def wait_for_cmd(self, cmd_id):
+        current_cmd_id = self._get_queued_cmd_current_index()
+        while cmd_id > current_cmd_id:
+            if self.verbose:
+                print("Current-ID", current_cmd_id)
+                print("Waiting for", cmd_id)
+            time.sleep(0.5)
+            current_cmd_id = self._get_queued_cmd_current_index()
+
+    def _set_home_cmd(self):
+        msg = Message()
+        msg.id = 31
+        msg.ctrl = 0x03
+        msg.params = bytearray([])
+        return self._send_command(msg)
+
+    def _set_arc_cmd(self, x, y, z, r, cir_x, cir_y, cir_z, cir_r):
+        msg = Message()
+        msg.id = 101
+        msg.ctrl = 0x03
+        msg.params = bytearray([])
+        msg.params.extend(bytearray(struct.pack('f', cir_x)))
+        msg.params.extend(bytearray(struct.pack('f', cir_y)))
+        msg.params.extend(bytearray(struct.pack('f', cir_z)))
+        msg.params.extend(bytearray(struct.pack('f', cir_r)))
+        msg.params.extend(bytearray(struct.pack('f', x)))
+        msg.params.extend(bytearray(struct.pack('f', y)))
+        msg.params.extend(bytearray(struct.pack('f', z)))
+        msg.params.extend(bytearray(struct.pack('f', r)))
+        return self._send_command(msg)
+
+    def _set_home_coordinate(self, x, y, z, r):
+        msg = Message()
+        msg.id = 30
+        msg.ctrl = 0x03
+        msg.params = bytearray([])
+        msg.params.extend(bytearray(struct.pack('f', x)))
+        msg.params.extend(bytearray(struct.pack('f', y)))
+        msg.params.extend(bytearray(struct.pack('f', z)))
+        msg.params.extend(bytearray(struct.pack('f', r)))
+        return self._send_command(msg)
+
+    def move_to(self, x, y, z, r=0., mode=MODE_PTP_MOVJ_XYZ):
+        return self._extract_cmd_index(self._set_ptp_cmd(x, y, z, r, mode))
+
+    def go_arc(self, x, y, z, r, cir_x, cir_y, cir_z, cir_r):
+        return self._extract_cmd_index(self._set_arc_cmd(x, y, z, r, cir_x, cir_y, cir_z, cir_r))
 
     def suck(self, enable):
-        self._set_end_effector_suction_cup(enable)
+        return self._extract_cmd_index(self._set_end_effector_suction_cup(enable))
+
+    def set_home(self, x, y, z, r=0.):
+        self._set_home_coordinate(x, y, z, r)
+
+    def home(self):
+        return self._extract_cmd_index(self._set_home_cmd())
 
     def grip(self, enable):
-        self._set_end_effector_gripper(enable)
+        return self._extract_cmd_index(self._set_end_effector_gripper(enable))
+
+    def laze(self, power=0, enable=False):
+        self._set_end_effector_laser(power, enable)
 
     def speed(self, velocity=100., acceleration=100.):
         self._set_ptp_common_params(velocity, acceleration)
@@ -256,3 +342,50 @@ class Dobot:
         j3 = struct.unpack_from('f', response.params, 24)[0]
         j4 = struct.unpack_from('f', response.params, 28)[0]
         return x, y, z, r, j1, j2, j3, j4
+
+    def conveyor_belt(self, speed, direction=1, interface=0):
+        if 0.0 <= speed <= 1.0 and (direction == 1 or direction == -1):
+            motor_speed = 70 * speed * STEP_PER_CRICLE / MM_PER_CRICLE * direction
+            self._set_stepper_motor(motor_speed, interface)
+        else:
+            raise DobotException("Wrong Parameter")
+
+    def _set_stepper_motor(self, speed, interface=0, motor_control=True):
+        msg = Message()
+        msg.id = 0x87
+        msg.ctrl = 0x03
+        msg.params = bytearray([])
+        if interface == 1:
+            msg.params.extend(bytearray([0x01]))
+        else:
+            msg.params.extend(bytearray([0x00]))
+        if motor_control is True:
+            msg.params.extend(bytearray([0x01]))
+        else:
+            msg.params.extend(bytearray([0x00]))
+        msg.params.extend(bytearray(struct.pack('i', speed)))
+        return self._send_command(msg)
+
+    def conveyor_belt_distance(self, speed, distance, direction=1, interface=0):
+        if 0.0 <= speed <= 100.0 and (direction == 1 or direction == -1):
+            motor_speed = speed * STEP_PER_CRICLE / MM_PER_CRICLE * direction
+            self._set_stepper_motor_distance(motor_speed, distance, interface)
+        else:
+            raise DobotException("Wrong Parameter")
+
+    def _set_stepper_motor_distance(self, speed, distance, interface=0, motor_control=True):
+        msg = Message()
+        msg.id = 0x88
+        msg.ctrl = 0x03
+        msg.params = bytearray([])
+        if interface == 1:
+            msg.params.extend(bytearray([0x01]))
+        else:
+            msg.params.extend(bytearray([0x00]))
+        if motor_control is True:
+            msg.params.extend(bytearray([0x01]))
+        else:
+            msg.params.extend(bytearray([0x00]))
+        msg.params.extend(bytearray(struct.pack('i', speed)))
+        msg.params.extend(bytearray(struct.pack('I', distance)))
+        return self._send_command(msg)
