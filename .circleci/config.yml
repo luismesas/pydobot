@@ -8,6 +8,7 @@ jobs:
       - run: apt update
       - run: apt install gettext-base
       - run: envsubst < setup.py > setup.py
+      - run: cat setup.py
       - run: pip install twine
       - run: python setup.py sdist bdist_wheel && ls -l
       - run: ls -l
